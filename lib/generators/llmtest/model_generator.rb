@@ -4,13 +4,20 @@
 #   - get baseline coverage before adding test cases
 #   - check coverage after each test case
 
+# for relations and validation helpers I could use a parser to generate tests with shoulda matchers??
+# only use llm for custom code
+
+# should this really be a generator, or should it be a rake task?
+
+# for models with relations and functionality based on the relations i probably need to provide these as reference to the llm
 require "rails/generators"
 require "llmtest/llm"
 
 module Llmtest
   module Generators
     class ModelGenerator < Rails::Generators::NamedBase
-      class_option :prompt, aliases: "-p", type: :string, default: "Generate unit tests for the following Ruby on Rails model using the MiniTest Framework:", desc: "prompt for the llm, model source code will be appended"
+      class_option :prompt, type: :string, default: "Generate unit tests for the following Ruby on Rails model using the MiniTest Framework.
+        Only generate tests for the defined functions, not for scope, validations and relations:", desc: "prompt for the llm, model source code will be appended"
       desc "This generator creates unit tests for a given model with the help of an LLM."
       source_root File.expand_path("templates", __dir__)
 
@@ -33,15 +40,16 @@ module Llmtest
 
       def get_test_cases
         @llm = Llmtest::Llm.new
-        print options[:prompt]
 
         prompt = options[:prompt] + "\n#{@model}"
+
+        puts prompt
 
         @response = @llm.chat(prompt)
 
         message = @response.dig("choices", 0, "message", "content")
         # extract the each test case from the response
-        # TODO more robust regex or even a parser
+        # TODO use parser to extract test cases
         @test_cases = message.scan(/ *?test .*? do.*?end\n/ms)
       end
 
