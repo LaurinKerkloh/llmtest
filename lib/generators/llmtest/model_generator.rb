@@ -1,8 +1,8 @@
+# TODO check if test does fail (only checking for errors at the moment)
 # TODO check if test cases increase coverage
 #   - check if simple_cov is set up correctly
 #   - get baseline coverage before adding test cases
 #   - check coverage after each test case
-# TODO check if test case allready exists
 
 require "rails/generators"
 require "llmtest/llm"
@@ -10,6 +10,7 @@ require "llmtest/llm"
 module Llmtest
   module Generators
     class ModelGenerator < Rails::Generators::NamedBase
+      class_option :prompt, aliases: "-p", type: :string, default: "Generate unit tests for the following Ruby on Rails model using the MiniTest Framework:", desc: "prompt for the llm, model source code will be appended"
       desc "This generator creates unit tests for a given model with the help of an LLM."
       source_root File.expand_path("templates", __dir__)
 
@@ -18,9 +19,7 @@ module Llmtest
         # stop if the file does NOT exist
         if !File.exist?(@test_file)
           # TODO create the file if it does not exist
-          puts "No test file found for #{@file_name}."
-          puts "Please generate/create the test file first."
-          nil
+          raise "\nNo test file found for #{@file_name}.\nPlease generate/create the test file first."
         end
         @test_file_lines = File.readlines(@test_file)
         # find and store line number after which to insert the test cases
@@ -34,7 +33,10 @@ module Llmtest
 
       def get_test_cases
         @llm = Llmtest::Llm.new
-        prompt = "Generate unit tests for the following Ruby on Rails model using the MiniTest Framework:\n#{@model}"
+        print options[:prompt]
+
+        prompt = options[:prompt] + "\n#{@model}"
+
         @response = @llm.chat(prompt)
 
         message = @response.dig("choices", 0, "message", "content")
