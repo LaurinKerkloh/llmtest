@@ -2,19 +2,24 @@ require "openai"
 
 module Llmtest
   class Llm
-    def initialize
+    def initialize(model: "gpt-3.5-turbo")
       @client = OpenAI::Client.new(access_token: ENV["OPENAI_API_KEY"], log_errors: true)
+      @model = model
+      @messages = []
     end
 
-    def chat(prompt)
+    def chat(message)
+      @messages.append({role: "user", content: message})
       response = @client.chat(
         parameters: {
-          model: "gpt-3.5-turbo",
-          messages: [{role: "user", content: prompt}]
+          model: @model,
+          messages: @messages
         }
       )
-      puts response.dig("choices", 0, "message", "content")
-      response
+      response_message = response.dig("choices", 0, "message")
+      @messages.append(response_message)
+
+      response_message["content"]
     end
   end
 end
