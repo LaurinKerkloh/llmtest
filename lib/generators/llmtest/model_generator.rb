@@ -1,13 +1,18 @@
 # can i get llm to not do setup or should i try to parse it?
+#  - move necessery variable definitions from setup to the test cases
 # take the whole response first and then only new test cases? -> dont like this
 # prompt with only parts of the model / units? (smaller context)?
 # for rspec
 # could try to keep describe and context blocks
 
+# create fixtures for each model?
 # could check if simple_cov is set up correctly
 # should this really be a generator, or should it be a rake task?
 # rails helpers are not tested, i dont think they need to be
 
+# move test case validation to testvalidator class
+# could also leave some manual task (creating necisarry fixtures/generators)
+# also accept def test_ when generating minitest tests
 require "rails/generators"
 require "llmtest/llm"
 require "llmtest/prompt_builder"
@@ -36,6 +41,7 @@ module Llmtest
           @test_file = Rails.root.join("test", "models", "#{file_name}_test.rb")
           @insert_after_node_expression = "class (const nil #{file_name.camelize}Test)"
           @test_node_expression = "(block (send nil test))"
+
         end
 
         @model_file = Rails.root.join("app", "models", "#{file_name}.rb")
@@ -43,13 +49,14 @@ module Llmtest
         raise "\nNo model found with the name #{@file_name}." unless @model_file.exist?
         raise "\nNo test file found for #{@file_name}.\nExpecting the file at #{@test_file}\nPlease generate/create the test file first." unless @test_file.exist?
 
-        @test_file_ast = Parser::CurrentRuby.parse_file(@test_file)
         # find the line index to insert the test cases
-        @line_index = Fast.search(@test_file_ast, @insert_after_node_expression).first.loc.line
+        @line_index = Fast.search_file(@insert_after_node_expression, @test_file).first.loc.line
         @test_file_lines = @test_file.readlines
 
         @model_ast = Parser::CurrentRuby.parse_file(@model_file)
         @model = @model_file.read
+
+        @schema_file = Rails.root.join("db", "schema.rb")
       end
 
       def assess_initial_coverage
@@ -72,8 +79,12 @@ module Llmtest
 
           @response = @llm.chat(prompt)
           say @response, :green
-          # find the ruby marked code block
-          generated_ruby_code = @response.match(/```ruby\n(.*?)```/m).captures.first
+          # assume the anwer is only code if not wrapped in ```ruby ```
+          generated_ruby_code = if @response.match?(/```ruby\n(.*?)```/m)
+            @response.match(/```ruby\n(.*?)```/m).captures.first
+          else
+            @response
+          end
           generated_test_ast = Parser::CurrentRuby.parse(generated_ruby_code)
 
           @test_cases = Fast.search(generated_test_ast, @test_node_expression).map { |node| node.loc.expression.source }
@@ -86,7 +97,7 @@ module Llmtest
         end
 
         puts "final coverage:"
-        puts @coverage
+        puts @prompt_builder.coverage_missing_string(@coverage)
       end
 
       private
