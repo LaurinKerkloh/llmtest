@@ -1,46 +1,60 @@
+require "tty-prompt"
+require "llmtest/utils"
+
 module Llmtest
   class PromptBuilder
-    MINITEST_PROMPT = "Generate unit tests for the following Ruby on Rails model using the MiniTest Framework.\n" \
-      "Only generate tests for the defined functions, not for scope, validation helpers and relations.\n" \
-      "Also do not use fixtures or other setup functions, each test case has to be self contained.\n" \
-      "Please mock dependencies on other Models and Classes.\n" \
-      "The tests should be named in the following format: test \"test name here\"\n"
+    MINITEST_PROMPT = "Write unit tests for the %{method_name} method of the %{model_name} Ruby on Rails model. Use the  MiniTest Framework. \n" \
+                      "The %{model_name} model and the relevant related models with their database fields and source code are listed below:\n"
 
-    RSPEC_PROMPT = "Generate unit tests for the following Ruby on Rails model using the RSpec Framework.\n" \
-      "Only generate tests for the defined functions, not for scope, validation helpers and relations.\n" \
-      "Also do not use any setup functions. All necessary setup should be done in each example (it block). So each example (it block) can be excecuted on its own.\n" \
-      "Please mock dependencies on other Models and Classes.\n" \
+    MODEL_CONTEXT = "%{model_name}: %{model_fields}\n" \
+      "%{model_path}\n" \
+      "```ruby\n" \
+      "%{model_source}\n" \
+      "```\n"
 
-    COVERAGE_MISSING_PROMPT = "After adding the tests that ran successfully to the test suite, there is still coverage missing."
-    def initialize(rspec, file)
-      @rspec = rspec
-      @model_file = file
+    CONCERN_CONTEXT = "The included {concern_name} concern:\n" \
+                      "%{concern_path}\n" \
+                      "```ruby\n" \
+                      "%{concern_source}\n" \
+                      "```\n"
+
+    # insert before the method that is supposed to be tested
+    METHOD_COMMENT = "unit test for this method"
+
+    def self.model_prompt(model, with_line_numbers: false)
+      model_source = if with_line_numbers
+        Llmtest::Utils.insert_line_numbers(model.source)
+      else
+        model.source
+      end
+      MODEL_CONTEXT % {model_name: model.name, model_fields: model.fields.join(", "), model_path: model.path, model_source: model_source}
     end
 
-    def initial_prompt(coverage = nil)
-      prompt = if @rspec
-        RSPEC_PROMPT
-      else
-        MINITEST_PROMPT
-      end
+    def initialize(model)
+      @model = model
+    end
 
-      prompt += model_string(numbered_lines: false)
-      prompt += coverage_missing_string(coverage) if coverage
+    def select_method
+      @method_name = TTY::Prompt.new.select("Select the method you want to create tests for.", @model.method_names)
+      @model.insert_comment_before_method(@method_name, METHOD_COMMENT)
+      @method_name
+    end
+
+    def select_related_models
+      related_model_names = TTY::Prompt.new.multi_select("Select which related models to include in the prompt", @model.get_association_model_names)
+      @related_models = related_model_names.map { |model_name| Model.new(model_name) }
+    end
+
+    def prompt(after_instruction = nil, with_line_numbers: true)
+      prompt = (MINITEST_PROMPT % {method_name: @method_name, model_name: @model.name})
+      prompt += "#{after_instruction}\n" if after_instruction
+      prompt += self.class.model_prompt(@model, with_line_numbers: with_line_numbers)
+      prompt += @related_models.map { |model| self.class.model_prompt(model) }.join
+      prompt += Concern.concerns.map { |concern| CONCERN_CONTEXT % {concern_name: concern.name, concern_path: concern.path, concern_source: concern.source} }.join
       prompt
     end
 
-    def coverage_missing_prompt(coverage)
-      COVERAGE_MISSING_PROMPT + coverage_missing_string(coverage)
-    end
-
     private
-
-    def model_string(numbered_lines: false)
-      # TODO add line numbers to the model string
-      raise NotImplementedError if numbered_lines
-
-      "The model source code is: \n" + @model_file.read
-    end
 
     def coverage_missing_string(coverage)
       lines = coverage["lines"]

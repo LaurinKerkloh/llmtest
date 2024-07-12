@@ -37,7 +37,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "parser"
   spec.add_dependency "simplecov"
   spec.add_dependency "ffast"
-
+  spec.add_dependency "tty-prompt"
   spec.add_development_dependency "standard", "~> 1.36.0"
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html
