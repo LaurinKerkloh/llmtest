@@ -11,6 +11,7 @@ module Llmtest
       @klass = @name.constantize
       @fields = @klass.columns.map { |column| "#{column.name}: #{column.type}" }
       @source = File.read(@path)
+      @ast = Fast.ast(@source)
       @concerns = get_concerns
     end
 
@@ -22,24 +23,34 @@ module Llmtest
       Fast.search_file("(class (const nil #{name}Test)", test_file_path).first.loc.expression.last_line - 1
     end
 
-    def method_names
-      Fast.search(Fast.ast(@source), "(def $_)").each_slice(2).map { |_, method_symbol| method_symbol.to_s }
+    def public_method_names
+      private_line = Fast.search(@ast, "(send nil private)").first.loc.line
+      Fast.search(@ast, "(def $_)").each_slice(2).filter_map { |node, method_symbol| method_symbol.to_s if node.loc.line < private_line }
+    end
+
+    def custom_validation_method_names
+      Fast.search(@ast, "(send nil validate (sym $_))").each_slice(2).map { |_, method_symbol| method_symbol.to_s }
+    end
+
+    def custom_callbacks_types_and_method_names
+      Fast.capture(@ast, "(send nil $_ (sym $_))").each_slice(2).filter_map { |type, method| [type.to_s, method.to_s] if type.to_s.start_with?("before", "around", "after") }
     end
 
     def method_lines(method_name)
-      method_node = Fast.search(Fast.ast(@source), "(def #{method_name})").first
+      method_node = Fast.search(@ast, "(def #{method_name})").first
       method_node.loc.first_line..method_node.loc.last_line
     end
 
     def method_source(method_name)
-      method_node = Fast.search(Fast.ast(@source), "(def #{method_name})").first
+      method_node = Fast.search(@ast, "(def #{method_name})").first
       method_node.loc.expression.source
     end
 
-    def insert_comment_before_method(method_name, comment)
-      method_node = Fast.search(Fast.ast(@source), "(def #{method_name})").first
+    def source_with_method_comment(method_name, comment)
+      method_node = Fast.search(@ast, "(def #{method_name})").first
       method_node.loc.expression.source
-      @source.insert(method_node.loc.expression.begin_pos, "# #{comment}\n")
+      with_comment = @source
+      with_comment.insert(method_node.loc.expression.begin_pos, "# #{comment}\n")
     end
 
     def get_association_model_names
@@ -51,7 +62,7 @@ module Llmtest
     private
 
     def get_concerns
-      Fast.search(Fast.ast(@source), "(send nil include $())").each_slice(2).map do |_, concern_name_node|
+      Fast.search(@ast, "(send nil include $())").each_slice(2).map do |_, concern_name_node|
         # underscore turns Namespaced::ExamPle into namespaced/exam_ple
         Concern.get_or_create(concern_name_node.loc.expression.source.underscore)
       end

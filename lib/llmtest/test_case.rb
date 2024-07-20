@@ -10,17 +10,17 @@ module Llmtest
     def insert_into_file(file_path, line_index)
       @test_file = file_path
       lines = file_path.readlines
-      lines.insert(line_index, "#{identifier_comment}\n#{@source}")
+      lines.insert(line_index, "#{identifier_comment}\n  #{@source}")
       file_path.open("w") { |file| file.puts(lines) }
     end
 
     def remove_from_file
-      test_node = Fast.search_file("(block (send nil test))", @test_file).find { |node| node.loc.line == get_test_index }
+      test_node = Fast.search(Fast.ast(@test_file.read), "(block (send nil test))").find { |node| node.loc.line == get_test_index + 1 }
 
-      print "Test node: #{test_node.loc.line} - #{test_node.loc.last_line}\n"
+      puts "Test node: #{test_node.loc.line} - #{test_node.loc.last_line}\n"
 
       lines = @test_file.readlines
-      lines.slice!((test_node.loc.line - 1)..test_node.loc.last_line)
+      lines.slice!((test_node.loc.line - 2)..(test_node.loc.last_line - 1))
       @test_file.open("w") { |file| file.puts(lines) }
     end
 
