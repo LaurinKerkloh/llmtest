@@ -70,18 +70,17 @@ module Llmtest
         # main loop (missing coverage)
         loop do
           # loop to allow for additional prompts
+
           loop do
             console.say("Response:")
             console.say(response)
 
             selection = console.select("Do you want to continue with this response or specify with an additional prompt?", %w[continue specify])
-            case selection
-            when "continue"
-              break
-            when "specify"
-              input = console.ask("Enter your prompt.")
-              response = llm.chat(input)
-            end
+
+            break if selection == "continue"
+
+            input = console.ask("Enter your prompt.")
+            response = llm.chat(input)
           end
 
           # extract test cases from response

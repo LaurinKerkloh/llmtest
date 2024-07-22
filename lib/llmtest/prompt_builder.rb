@@ -7,12 +7,13 @@ module Llmtest
                     "You will be prompted to write tests for either a public method, a custom validation or a custom callback.\n" \
                     "The model and the relevant related models with their database fields and source code will be provided to you.\n" \
                     "Aswell as the source code of any included concerns.\n" \
-                    "There are fixtures available for each model, called one and two, make use of them and modify the necesarry fields in each test case.\n"
-    # "When testing callbacks or validations do not test the called methods themselves, but the behavior of the model when the callback or validation is triggered.\n"
+                    "There are fixtures available for each model, called one and two, make use of them and modify the necesarry fields in each test.\n" \
+                    "When testing validations assert if there are errors on the correct field after calling valid? on the object.\n"
 
     COVERAGE_PROMPT = "After including some or all of the tests, there is coverage missing. \n" \
                       "Uncovered lines: %{uncovered_lines}\n" \
-                      "Uncovered branches: %{uncovered_branches}\n"
+                      "Uncovered branches: %{uncovered_branches}\n" \
+                      "Only give me the new tests that cover the missing lines and branches."
 
     BASE_PROMPT = "Test the %{testable_type} '%{method_name}' of the %{model_name} model.\n" \
                       "Relevant model information:\n"
@@ -55,7 +56,6 @@ module Llmtest
       custom_validations = @model.custom_validation_method_names.to_h { |method_name| ["(custom validation) #{method_name}", ["custom_validation", method_name]] }
       custom_callbacks = @model.custom_callbacks_types_and_method_names.to_h { |type, method_name| ["(custom #{type} callback) #{method_name}", [["custom_callback", type], method_name]] }
       choices = public_methods.merge(custom_validations).merge(custom_callbacks)
-      puts choices
       @testable_type, @method_name = TTY::Prompt.new.select("Select what you want to create tests for.", choices)
 
       [@testable_type, @method_name]

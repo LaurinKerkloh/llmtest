@@ -17,8 +17,6 @@ module Llmtest
     def remove_from_file
       test_node = Fast.search(Fast.ast(@test_file.read), "(block (send nil test))").find { |node| node.loc.line == get_test_index + 1 }
 
-      puts "Test node: #{test_node.loc.line} - #{test_node.loc.last_line}\n"
-
       lines = @test_file.readlines
       lines.slice!((test_node.loc.line - 2)..(test_node.loc.last_line - 1))
       @test_file.open("w") { |file| file.puts(lines) }
@@ -26,7 +24,6 @@ module Llmtest
 
     def run
       test_line = get_test_index + 1
-      puts "Test index: #{test_line}"
       return false if test_line.nil?
       system("rails test #{@test_file.relative_path_from(Rails.root)}:#{test_line}")
     end
