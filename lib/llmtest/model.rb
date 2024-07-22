@@ -20,12 +20,14 @@ module Llmtest
     end
 
     def test_file_insert_line_index
-      Fast.search_file("(class (const nil #{name}Test)", test_file_path).first.loc.expression.last_line - 1
+      Fast.search(Fast.ast(test_file_path.read), "(class (const nil #{name}Test)").first.loc.expression.last_line - 1
     end
 
     def public_method_names
-      private_line = Fast.search(@ast, "(send nil private)").first.loc.line
-      Fast.search(@ast, "(def $_)").each_slice(2).filter_map { |node, method_symbol| method_symbol.to_s if node.loc.line < private_line }
+      private_line = Fast.search(@ast, "(send nil private)").first&.loc&.line
+      Fast.search(@ast, "(def $_)").each_slice(2).filter_map do |node, method_symbol|
+        method_symbol.to_s if private_line.nil? || node.loc.line < private_line
+      end
     end
 
     def custom_validation_method_names
