@@ -18,10 +18,8 @@ module Llmtest
       coverage = parse_coverage_file
 
       lines_newly_covered = []
-      puts self
       get_line_coverage(coverage).each_with_index do |line_coverage, index|
-        puts "line_coverage at index #{index}: #{line_coverage}"
-        if line_coverage >= 1 && @line_coverage[index] == 0
+        if line_coverage && line_coverage >= 1 && @line_coverage[index] == 0
           lines_newly_covered << index + 1
           @line_coverage[index] = line_coverage
         end
@@ -46,7 +44,11 @@ module Llmtest
     end
 
     def to_s
-      "lines: #{@line_coverage}\nbranches: #{@branch_coverage}"
+      "CoverageTracker\n" \
+      "Coverable Lines: #{@line_coverage.compact.size - 1}\n" \
+      "Coverable Branches: #{@branch_coverage.size}\n" \
+      "lines: #{@line_coverage}\n" \
+      "branches: #{@branch_coverage.join("\n")}"
     end
 
     def uncovered_lines(in_original_file: false)
@@ -62,7 +64,7 @@ module Llmtest
 
       return unvovered_branches unless in_original_file
 
-      unvovered_branches.map { |branch| branch["start_line"] + @relevant_lines.begin }
+      unvovered_branches.each { |branch| branch["start_line"] + @relevant_lines.begin }
     end
 
     private
@@ -78,7 +80,7 @@ module Llmtest
 
     def get_branch_coverage(file_coverage)
       branches = file_coverage["branches"].select { |branch| relevant_lines.include?(branch["start_line"]) }
-      branches.map { |branch| branch["start_line"] = branch["start_line"] - @relevant_lines.begin }
+      branches.each { |branch| branch["start_line"] = branch["start_line"] - @relevant_lines.begin }
     end
   end
 end
