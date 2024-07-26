@@ -1,6 +1,5 @@
 module Llmtest
   class CoverageTracker
-    attr_reader :coverage_path, :source_path, :relevant_lines
     def initialize(coverage_path, source_path, relevant_lines)
       @coverage_path = coverage_path
       @source_path = source_path

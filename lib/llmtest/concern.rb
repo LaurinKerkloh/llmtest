@@ -1,14 +1,8 @@
 module Llmtest
   class Concern
-    @concerns = []
-    attr_reader :file_name, :name, :path, :source
-    def initialize(file_name)
-      @file_name = file_name
-      @name = file_name.camelize
-      @path = Rails.root.join("app", "models", "concerns", "#{file_name}.rb")
-      @source = @path.read
-    end
+    attr_reader :file_name
 
+    @concerns = []
     def self.get_or_create(file_name)
       concern = @concerns.find { |c| c.file_name == file_name }
       if concern.nil?
@@ -18,8 +12,24 @@ module Llmtest
       concern
     end
 
-    def self.concerns
+    def self.all
       @concerns
+    end
+
+    def initialize(file_name)
+      @file_name = file_name
+    end
+
+    def name
+      file_name.camelize
+    end
+
+    def path
+      Rails.root.join("app", "models", "concerns", "#{file_name}.rb")
+    end
+
+    def source
+      path.read
     end
   end
 end

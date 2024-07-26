@@ -2,7 +2,7 @@ require "openai"
 
 module Llmtest
   class Llm
-    def initialize(model: "gpt-4o-mini", system_prompt: nil, messages: [])
+    def initialize(model, system_prompt: nil, messages: [])
       @client = OpenAI::Client.new(access_token: ENV["OPENAI_API_KEY"], log_errors: true)
       @model = model
       @messages = messages

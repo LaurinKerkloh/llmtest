@@ -19,7 +19,7 @@ module Llmtest
 
       source_root File.expand_path("templates", __dir__)
 
-      def one
+      def main
         console = TTY::Prompt.new
         model = Llmtest::Model.new(file_name)
         llm = Llmtest::Llm.new(model: options[:llm_model], system_prompt: Llmtest::PromptBuilder::SYSTEM_PROMPT)

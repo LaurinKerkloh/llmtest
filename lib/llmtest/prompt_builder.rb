@@ -62,8 +62,9 @@ module Llmtest
     end
 
     def select_related_models
-      related_model_names = TTY::Prompt.new.multi_select("Select which related models to include in the prompt", @model.get_association_model_names)
-      @related_models = related_model_names.map { |model_name| Model.new(model_name) }
+      associated_models = @model.associated_models
+      choices = associated_models.map { |model| [model.file_name, model] }
+      @related_models = TTY::Prompt.new.multi_select("Select which related models to include in the prompt", choices)
     end
 
     def prompt(after_instruction = nil, with_line_numbers: true)
@@ -71,7 +72,7 @@ module Llmtest
       prompt += "#{after_instruction}\n" if after_instruction
       prompt += self.class.model_prompt(@model, with_line_numbers: with_line_numbers)
       prompt += @related_models.map { |model| self.class.model_prompt(model) }.join
-      prompt += Concern.concerns.map { |concern| CONCERN_CONTEXT % {concern_name: concern.name, concern_path: concern.path, concern_source: concern.source} }.join
+      prompt += Concern.all.map { |concern| CONCERN_CONTEXT % {concern_name: concern.name, concern_path: concern.path, concern_source: concern.source} }.join
       prompt
     end
 
