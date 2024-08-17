@@ -3,7 +3,6 @@ PATH
   specs:
     llmtest (0.1.0)
       ffast
-      parser
       rails
       ruby-openai (~> 7.1.0)
       simplecov

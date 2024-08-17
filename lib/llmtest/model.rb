@@ -2,11 +2,10 @@ require "llmtest/concern"
 
 module Llmtest
   class Model
-    attr_reader :file_name, :concerns
+    attr_reader :file_name
 
     def initialize(file_name)
       @file_name = file_name
-      @concerns = initialize_concerns
     end
 
     def fields
@@ -63,26 +62,32 @@ module Llmtest
     end
 
     def associated_models
+      models = []
       klass.reflect_on_all_associations.map do |association|
-        new(association.klass.name.underscore)
+        models << self.class.new(association.klass.name.underscore)
       end
+      models
     end
 
-    private
+    def name
+      file_name.camelize
+    end
 
-    def initialize_concerns
+    def concerns
       Fast.search(ast, "(send nil include $())").each_slice(2).map do |_, concern_name_node|
         # underscore turns Namespaced::ExamPle into namespaced/exam_ple
         Concern.get_or_create(concern_name_node.loc.expression.source.underscore)
       end
     end
 
+    private
+
     def ast
       Fast.ast(source)
     end
 
     def klass
-      file_name.camelize.constantize
+      name.constantize
     end
   end
 end

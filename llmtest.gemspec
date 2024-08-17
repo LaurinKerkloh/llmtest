@@ -25,8 +25,8 @@ Gem::Specification.new do |spec|
   spec.files += Dir["[A-Z]*"]
   spec.files.reject! { |fn| fn.include? "CVS" }
 
-  spec.bindir = "exe"
-  spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
+  # spec.bindir = "exe"
+  # spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
   # Uncomment to register a ne' dependency of your gem
@@ -34,10 +34,10 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "rails"
   spec.add_dependency "ruby-openai", "~> 7.1.0"
-  spec.add_dependency "parser"
   spec.add_dependency "simplecov"
   spec.add_dependency "ffast"
   spec.add_dependency "tty-prompt"
+
   spec.add_development_dependency "standard", "~> 1.36.0"
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html

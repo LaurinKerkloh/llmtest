@@ -7,7 +7,6 @@ require "llmtest/prompt_builder"
 require "llmtest/coverage_tracker"
 require "tty-prompt"
 require "llmtest/response_parser"
-require "parser/current"
 require "fast"
 
 module Llmtest
@@ -19,10 +18,11 @@ module Llmtest
 
       source_root File.expand_path("templates", __dir__)
 
+      DEVIDER = "--------------------------------------------------------------------------------"
       def main
         console = TTY::Prompt.new
         model = Llmtest::Model.new(file_name)
-        llm = Llmtest::Llm.new(model: options[:llm_model], system_prompt: Llmtest::PromptBuilder::SYSTEM_PROMPT)
+        llm = Llmtest::Llm.new(options[:llm_model], system_prompt: Llmtest::PromptBuilder::SYSTEM_PROMPT)
         prompt_builder = Llmtest::PromptBuilder.new(model)
 
         coverage_path = Rails.root.join("coverage", "coverage.json")
@@ -150,7 +150,7 @@ module Llmtest
 
           # prompt for additional test cases
           prompt = prompt_builder.coverage_prompt(coverage_tracker)
-          console.say(prompt)
+          console.say("Prompt:\n#{prompt}")
           response = llm.chat(prompt)
         end
       end

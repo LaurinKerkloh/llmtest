@@ -5,7 +5,7 @@ module Llmtest
     end
 
     def source
-      node.loc.expression.source
+      @node.loc.expression.source
     end
 
     def insert_into_file(file_path, line_index)

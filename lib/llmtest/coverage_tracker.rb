@@ -59,11 +59,15 @@ module Llmtest
     end
 
     def uncovered_branches(in_original_file: false)
-      unvovered_branches = @branch_coverage.filter_map { |branch| branch if branch["coverage"] == 0 }
+      uncovered_branches = @branch_coverage.filter_map { |branch| branch if branch["coverage"] == 0 }
 
-      return unvovered_branches unless in_original_file
+      return uncovered_branches unless in_original_file
 
-      unvovered_branches.each { |branch| branch["start_line"] + @relevant_lines.begin }
+      uncovered_branches.each do |branch|
+        branch["start_line"] += @relevant_lines.begin
+        branch["end_line"] += @relevant_lines.begin
+      end
+      uncovered_branches
     end
 
     private
@@ -78,8 +82,11 @@ module Llmtest
     end
 
     def get_branch_coverage(file_coverage)
-      branches = file_coverage["branches"].select { |branch| relevant_lines.include?(branch["start_line"]) }
-      branches.each { |branch| branch["start_line"] = branch["start_line"] - @relevant_lines.begin }
+      branches = file_coverage["branches"].select { |branch| @relevant_lines.include?(branch["start_line"]) }
+      branches.each do |branch|
+        branch["start_line"] -= @relevant_lines.begin
+        branch["end_line"] -= @relevant_lines.begin
+      end
     end
   end
 end

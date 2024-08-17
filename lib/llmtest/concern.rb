@@ -12,8 +12,8 @@ module Llmtest
       concern
     end
 
-    def self.all
-      @concerns
+    def self.from_models(models)
+      models.flat_map(&:concerns).uniq
     end
 
     def initialize(file_name)
