@@ -50,6 +50,14 @@ rails generate llmtest:model_tests model_name
 By default, the generator will use OpenAI's GPT-4o-mini model but with the `--llm_model` option, a different model can be specified.
 Refer to the OpenAI API documentation for a list of available models.
 
+## Documentation
+
+Documentation can be generated using YARD by running the following command:
+
+```bash
+yard doc
+```
+
 ## License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
