@@ -38,7 +38,7 @@ end
 
 ## Usage
 
-Before tests can be generated, two fixtures need to be created for each model and its associations, that tests should be generated for.
+Before tests can be generated, two fixtures, called 'one' and 'two', need to be created for each model and its associations, that tests should be generated for.
 These fixtures do not need any specific content, but should be valid instances of the model.
 
 After fixtures are created, the test generation process can be started by running the following command:

@@ -56,11 +56,11 @@ module Llmtest
     end
 
     def to_s
-      "CoverageTracker\n" \
-      "Coverable Lines: #{@line_coverage.compact.size - 1}\n" \
-      "Coverable Branches: #{@branch_coverage.size}\n" \
+      # "Coverable Lines: #{@line_coverage.compact.size - 1}\n" \
+      # "Coverable Branches: #{@branch_coverage.size}\n" \
+      "CoverageTracker:\n" \
       "lines: #{@line_coverage}\n" \
-      "branches: #{@branch_coverage.join("\n")}"
+      "branches: #{@branch_coverage.join("\n")}\n"
     end
 
     # Get the uncovered lines.

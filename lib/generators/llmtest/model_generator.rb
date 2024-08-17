@@ -29,12 +29,17 @@ module Llmtest
         prompt_builder = Llmtest::PromptBuilder.new(model)
 
         coverage_path = Rails.root.join("coverage", "coverage.json")
-        console.say("Please make sure the test file at #{model.test_file_path} exists and that it contains a test class.\nAlso make sure that simple_cov is set up to write coverage to #{coverage_path}.")
+        console.say(
+          "Please make sure the test file at #{model.test_file_path} exists and that it contains a test class.\n" \
+          "Also make sure that simple_cov is set up to write coverage to #{coverage_path}.\n" \
+          "Additionally, two fixtures called 'one' and 'two' are expected to be available for each model that is relevant to the method you want to test.\n"
+        )
+
         console.keypress("Press space or enter when you are sure that everything is setup.", keys: [:space, :return])
 
         # Select method to test
         testable_type, selected_method = prompt_builder.select_testable
-        console.say("Selected #{testable_type}:\n#{model.method_source(selected_method)}")
+        console.say("Selected #{testable_type}:\n  #{model.method_source(selected_method)}")
 
         # initialize coverage tracker
         coverage_tracker = Llmtest::CoverageTracker.new(
@@ -44,6 +49,8 @@ module Llmtest
         )
 
         # run tests to get initial coverage
+
+        console.say("\n#{DEVIDER}\nRunning tests to assess initial coverage:\n")
         success = Llmtest::Utils.run_tests(model.test_file_path)
         until success
           console.say("Tests failed. Please fix the failing tests first.")
@@ -61,7 +68,14 @@ module Llmtest
         prompt = prompt_builder.prompt
 
         # print prompt and give chance to add to it
-        console.say(prompt)
+
+        console.say("\n#{DEVIDER}\n" \
+          "System prompt:\n" \
+          "#{Llmtest::PromptBuilder::SYSTEM_PROMPT}\n" \
+          "#{DEVIDER}\n" \
+          "User prompt:\n" \
+          "#{prompt}\n")
+
         if console.yes?("Do you want to add to this prompt?", default: false)
           input = console.ask("Enter what you want to add. (Will be inserted before the model description.)")
           prompt = prompt_builder.prompt(input)
@@ -73,7 +87,6 @@ module Llmtest
         # main loop (missing coverage)
         loop do
           # loop to allow for additional prompts
-
           loop do
             console.say("Response:")
             console.say(response)
