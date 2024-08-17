@@ -11,14 +11,17 @@ require "fast"
 
 module Llmtest
   module Generators
+    # Rails Generator to create tests for a given model using a Large Language Model.
     class ModelGenerator < Rails::Generators::NamedBase
-      class_option :llm_model, type: :string, default: "gpt-4o-mini", desc: "model to use for the llm, available models: gpt-4o-mini, gpt-4o"
+      class_option :llm_model, type: :string, default: "gpt-4o-mini", desc: "model to use for the llm, refer to OpenAI's documentation for available models."
 
-      desc "This generator helps creating unit tests for a given model using a Large Language Model."
+      desc "This generator helps creating tests for a given model using a Large Language Model."
 
       source_root File.expand_path("templates", __dir__)
 
       DEVIDER = "--------------------------------------------------------------------------------"
+
+      # Main method of the generator.
       def main
         console = TTY::Prompt.new
         model = Llmtest::Model.new(file_name)

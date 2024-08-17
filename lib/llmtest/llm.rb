@@ -1,7 +1,11 @@
 require "openai"
 
 module Llmtest
+  # Class to chat with OpenAI's large language models. Expects the OPENAI_API_KEY environment variable to be set.
   class Llm
+    # @param model [String] Model to use for the chat. For example: "gpt-4o-mini", "gpt-4o"
+    # @param system_prompt [String, nil] System prompt to start the conversation with.
+    # @param messages [Array<Hash>] Array of messages to continue a conversation with.
     def initialize(model, system_prompt: nil, messages: [])
       @client = OpenAI::Client.new(access_token: ENV["OPENAI_API_KEY"], log_errors: true)
 
@@ -15,6 +19,10 @@ module Llmtest
       @system_prompt = system_prompt
     end
 
+    # Chat with the model.
+    #
+    # @param message [String] Message to send to the model.
+    # @return [String] Response from the model.
     def chat(message)
       if @system_prompt && @messages.empty?
         @messages.append({role: "system", content: @system_prompt})

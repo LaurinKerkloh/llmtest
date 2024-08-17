@@ -2,45 +2,13 @@ require "tty-prompt"
 require "llmtest/utils"
 
 module Llmtest
+  # Class to build prompts for the user to write tests for a model.
   class PromptBuilder
-    SYSTEM_PROMPT_OLD = "You write tests for Ruby on Rails models using the MiniTest framework. \n" \
+    SYSTEM_PROMPT = "You write tests for Ruby on Rails models using the MiniTest framework. \n" \
                     "You will be prompted to write tests for either a public method, a custom validation or a custom callback.\n" \
                     "The model and the relevant related models with their database fields and source code will be provided to you.\n" \
                     "Aswell as the source code of any included concerns.\n" \
                     "There are two default fixtures available for each model, called one and two, make use of them and modify fields as needed for each test.\n"
-
-    SYSTEM_PROMPT = "You write tests for Ruby on Rails models using the MiniTest framework. \n" \
-                    "You will be prompted to write tests for a custom validation. \n" \
-                    "The model and the relevant related models with their database fields and source code will be provided to you.\n" \
-                    "Aswell as the source code of any included concerns.\n" \
-                    "There are two default fixtures available for each model, called one and two, make use of them and modify fields as needed for each test.\n" \
-                    "An example of how to correctly assert for a validation:\n" \
-                    "The example model:" \
-                    "```ruby\n" \
-                    "class Record < ApplicationRecord\n" \
-                    "    validate :custom_validation\n" \
-                    "\n" \
-                    "    private\n" \
-                    "\n" \
-                    "    def custom_validation\n" \
-                    "        if some_attribute == 'invalid value'\n" \
-                    "            errors.add(:some_attribute, :error_type)\n" \
-                    "        end\n" \
-                    "    end\n" \
-                    "end\n" \
-                    "```\n" \
-                    "The a matching test:" \
-                    "```ruby\n" \
-                    "test 'custom validation should add error when some_attribute has invalid value' do\n" \
-                    "    record = records(:one)\n" \
-                    "    # modify the record so the validation fails\n" \
-                    "    record.some_attribute = 'invalid value'\n" \
-                    "\n" \
-                    "    record.valid?\n" \
-                    "\n" \
-                    "    assert_includes record.errors.details[:some_attribute], error: :error_type\n" \
-                    "end\n" \
-                    "```\n"
 
     COVERAGE_PROMPT = "After including some or all of the tests, there is coverage missing. \n" \
                       "Uncovered lines: %{uncovered_lines}\n" \
@@ -62,15 +30,13 @@ module Llmtest
                       "%{concern_source}\n" \
                       "```\n"
 
-    # inserted before the method that is supposed to be tested
-    METHOD_COMMENT = "unit test this method"
-
-    def self.model_prompt(model, with_line_numbers: false, comment_method: nil, comment: METHOD_COMMENT)
-      source = if comment_method
-        model.source_with_method_comment(comment_method, comment)
-      else
-        model.source
-      end
+    # Returns a prompt with information and source code of a given model. Optionally with line numbers added to each line.
+    #
+    # @param model [Llmtest::Model]
+    # @param with_line_numbers [Boolean]
+    # @return [String]
+    def self.model_prompt(model, with_line_numbers: false)
+      source = model.source
 
       if with_line_numbers
         source = Llmtest::Utils.insert_line_numbers(source)
@@ -79,10 +45,14 @@ module Llmtest
       MODEL_CONTEXT % {model_name: model.name, model_fields: model.fields.join(", "), model_path: model.path, model_source: source}
     end
 
+    # @param [Llmtest::Model] model
     def initialize(model)
       @model = model
     end
 
+    # Select a testable (public method, custom validation or custom callback) from the model using the CLI.
+    #
+    # @return [Array<String>] The type of the testable method and the method name.
     def select_testable
       public_methods = @model.public_method_names.to_h { |method_name| ["(public method) #{method_name}", ["public_method", method_name]] }
       custom_validations = @model.custom_validation_method_names.to_h { |method_name| ["(custom validation) #{method_name}", ["custom_validation", method_name]] }
@@ -93,6 +63,9 @@ module Llmtest
       [@testable_type, @method_name]
     end
 
+    # Select related models to include in the prompt using the CLI.
+    #
+    # @return [Array<Llmtest::Model>] The selected related models.
     def select_related_models
       associated_models = @model.associated_models
       if associated_models.empty?
@@ -103,6 +76,12 @@ module Llmtest
       @related_models = TTY::Prompt.new.multi_select("Select which related models to include in the prompt", choices)
     end
 
+    # Constructs prompt to write tests for the selected testable and includes the model and related models.
+    # It is required to call select_testable and select_related_models before calling this method.
+    #
+    # @param after_instruction [String] additional instruction to include in the prompt.
+    # @param with_line_numbers [Boolean] whether to include line numbers in the source code of the model under test.
+    # @return [String] The constructed prompt.
     def prompt(after_instruction = nil, with_line_numbers: true)
       prompt = (BASE_PROMPT % {testable_type: @testable_type, method_name: @method_name, model_name: @model.file_name})
       prompt += "#{after_instruction}\n" if after_instruction
@@ -115,6 +94,10 @@ module Llmtest
       prompt
     end
 
+    # Constructs missing coverage prompt based on the given coverage tracker.
+    #
+    # @param coverage_tracker [Llmtest::CoverageTracker]
+    # @return [String] The constructed prompt.
     def coverage_prompt(coverage_tracker)
       uncovered_lines = coverage_tracker.uncovered_lines(in_original_file: true)
       uncovered_branches = coverage_tracker.uncovered_branches(in_original_file: true)

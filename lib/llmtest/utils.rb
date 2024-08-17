@@ -1,11 +1,22 @@
 module Llmtest
+  # Utility methods.
   module Utils
+    # Inserts line numbers to a string.
+    #
+    # @param string [String] String to insert line numbers into.
+    # @return [String] String with line numbers.
     def self.insert_line_numbers(string)
       string.split("\n").each_with_index.map do |line, index|
         "#{index + 1}  #{line}"
       end.join("\n")
     end
 
+    # Run all tests or a specific test from a test file.
+    #
+    # @param test_file_path [Pathname] Path to the test file.
+    # @param test_index [Integer, nil] Optional index of the test to run.
+    #
+    # @return [Boolean] Whether the test(s) passed.
     def self.run_tests(test_file_path, test_index: nil)
       test_file_path = test_file_path.relative_path_from(Rails.root)
       if test_index
@@ -15,6 +26,7 @@ module Llmtest
       end
     end
 
+    # Extract all testables from the models and write them to a CSV file.
     def self.extract_all_testables
       csv = CSV.generate do |csv|
         csv << %w[Model Method Type Callback_Type]

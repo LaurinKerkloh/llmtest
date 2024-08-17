@@ -1,13 +1,18 @@
 require "llmtest/test_case"
 
 module Llmtest
+  # Class to parse a response from the large language model and extract test cases from it.
   class ResponseParser
     attr_reader :response
 
+    # @param response [String] Response from the large language model.
     def initialize(response)
       @response = response
     end
 
+    # Returns the test cases extracted from the response.
+    #
+    # @return [Array<Llmtest::TestCase>] Test cases extracted from the response.
     def test_cases
       test_cases = []
 
