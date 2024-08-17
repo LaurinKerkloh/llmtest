@@ -1,39 +1,55 @@
 # Llmtest
 
-TODO: Delete this and the text below, and describe your gem
-
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/llmtest`. To experiment with that code, run `bin/console` for an interactive prompt.
+This gem provides a Ruby on Rails generator, which uses OpenAI's large language model to generate tests for your Rails models.
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
+Add this line to your application's Gemfile:
 
-Install the gem and add to the application's Gemfile by executing:
+```ruby
+gem 'llmtest', git: 'https://github.com/LaurinKerkloh/llmtest'
+```
 
-    $ bundle add UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG
+## Setup
 
-If bundler is not being used to manage dependencies, install the gem by executing:
+To use the generator, you need to expose your OpenAI API key in the OPENAI_API_KEY environment variable.
 
-    $ gem install UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG
+```bash
+export OPENAI_API_KEY=your-api-key
+```
+
+Also the coverage tracker SimpleCov needs to be setup to write the coverage report to the file `coverage/coverage.json`.
+And branch coverage needs to be enabled.
+
+To do this, add the following to your `test/test_helper.rb`:
+
+```ruby
+require "simplecov"
+require "simplecov_json_formatter"
+SimpleCov.formatters = SimpleCov::Formatter::MultiFormatter.new([
+  SimpleCov::Formatter::HTMLFormatter, # optional: to also get the HTML report
+  SimpleCov::Formatter::JSONFormatter
+])
+
+SimpleCov.start do
+  enable_coverage :branch
+end
+```
 
 ## Usage
 
-TODO: Write usage instructions here
+Before tests can be generated, two fixtures need to be created for each model and its associations, that tests should be generated for.
+These fixtures do not need any specific content, but should be valid instances of the model.
 
-## Development
+After fixtures are created, the test generation process can be started by running the following command:
 
-After checking out the repo, run `bin/setup` to install dependencies. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+```bash
+rails generate llmtest:model_tests model_name
+```
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
-
-## Contributing
-
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/llmtest. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/llmtest/blob/main/CODE_OF_CONDUCT.md).
+By default, the generator will use OpenAI's GPT-4o-mini model but with the `--llm_model` option, a different model can be specified.
+Refer to the OpenAI API documentation for a list of available models.
 
 ## License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
-
-## Code of Conduct
-
-Everyone interacting in the Llmtest project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/llmtest/blob/main/CODE_OF_CONDUCT.md).
